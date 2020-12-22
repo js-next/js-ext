@@ -155,7 +155,7 @@ class ServiceManager(Base):
         """
         # handle signals
         for signal_type in (SIGTERM, SIGKILL):
-            gevent.signal(signal_type, self.stop)
+            gevent.signal_handler(signal_type, self.stop)
 
         # schedule default services
         for service in self.services.values():

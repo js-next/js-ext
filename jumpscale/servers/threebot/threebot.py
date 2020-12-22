@@ -762,7 +762,7 @@ class ThreebotServer(Base):
         # start default servers in the rack
         # handle signals
         for signal_type in (signal.SIGTERM, signal.SIGINT, signal.SIGKILL):
-            gevent.signal(signal_type, self.stop)
+            gevent.signal_handler(signal_type, self.stop)
 
         # mark app as started
         if self.is_running():
