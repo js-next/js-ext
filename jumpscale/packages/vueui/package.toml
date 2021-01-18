@@ -1,0 +1,9 @@
+name = "vueui"
+is_auth = false
+is_admin = false
+
+[[static_dirs]]
+name = "static"
+path_url = "/"
+absolute_path = false
+path_location = "components"

@@ -30,9 +30,9 @@ const baseComponent = httpVueLoader('./components/base/Component.vue')
 const baseDialog = httpVueLoader('./components/base/Dialog.vue')
 const JSONRender = httpVueLoader('./components/base/JSONRenderer.vue')
 const baseSection = httpVueLoader('./components/base/Section.vue')
-const external = httpVueLoader('./components/base/External.vue')
+const external = httpVueLoader('/vueui/base/External.vue')
 const popup = httpVueLoader('./components/base/Popup.vue')
-const code = httpVueLoader('./components/base/Code.vue')
+const code = httpVueLoader('/vueui/base/Code.vue')
 const markdownViewer = httpVueLoader('./components/base/MarkdownViewer.vue')
 
 
