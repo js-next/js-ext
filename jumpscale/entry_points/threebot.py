@@ -9,7 +9,7 @@ import tempfile
 import subprocess
 
 from jumpscale.loader import j
-from jumpscale.threesdk.identitymanager import IdentityManager
+from jumpscale.servers.threebot.identity_manager import IdentityManager
 from jumpscale.sals.nginx.nginx import PORTS
 from jumpscale.packages.admin.actors.wallet import Wallet
 

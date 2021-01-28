@@ -8,7 +8,6 @@ license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 cryptography = "3.0"
-js-ng = "11.0b12"
 greenlet = "0.4.16"
 python = "^3.6"
 captcha = "^0.3"
@@ -32,6 +31,7 @@ certbot-nginx = "1.5.0"
 requests_unixsocket = "^0.2.0"
 protobuf = "^3.12.2"
 crontab = "^0.22.9"
+js-grid = {git = "https://github.com/threefoldtech/js-grid.git", rev = "master"}
 
 [tool.poetry.scripts]
 threebot = "jumpscale.entry_points.threebot:cli"
