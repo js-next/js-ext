@@ -73,9 +73,9 @@ class VDCDeploy(GedisChatBot):
             is_identifier=True,
             max_length=20,
         )
-        self.vdc_secret = form.secret_ask("VDC Secret (Secret for controlling the vdc)", min_length=8, required=True,)
+        self.vdc_secret = form.secret_ask("VDC Secret (Secret for controlling the vdc)", min_length=8, required=True)
         self.vdc_flavor = form.single_choice(
-            "Choose the VDC plan", options=vdc_flavor_messages, default=vdc_flavor_messages[0], required=True,
+            "Choose the VDC plan", options=vdc_flavor_messages, default=vdc_flavor_messages[0], required=True
         )
         # self.deployment_logs = form.single_choice("Enable extensive deployment logs?", ["Yes", "No"], default="No")
         form.ask()
@@ -91,10 +91,10 @@ class VDCDeploy(GedisChatBot):
     def _k3s_and_minio_form(self):
         form = self.new_form()
         self.minio_access_key = form.string_ask(
-            "S3 access key (Credentials used to access the VDC's S3)", required=True,
+            "S3 access key (Credentials used to access the VDC's S3)", required=True
         )
         self.minio_secret_key = form.secret_ask(
-            "S3 secret key (Credentials used to access the VDC's S3)", min_length=8, required=True,
+            "S3 secret key (Credentials used to access the VDC's S3)", min_length=8, required=True
         )
         form.ask()
 
@@ -149,7 +149,7 @@ class VDCDeploy(GedisChatBot):
     @chatflow_step(title="VDC Deployment")
     def deploy(self):
         self.vdc = j.sals.vdc.new(
-            vdc_name=self.vdc_name.value, owner_tname=self.username, flavor=VDC_SIZE.VDCFlavor[self.vdc_flavor],
+            vdc_name=self.vdc_name.value, owner_tname=self.username, flavor=VDC_SIZE.VDCFlavor[self.vdc_flavor]
         )
         try:
             self.vdc.prepaid_wallet
@@ -199,7 +199,9 @@ class VDCDeploy(GedisChatBot):
         initialization_wallet_name = j.core.config.get("VDC_INITIALIZATION_WALLET")
         old_wallet = self.deployer._set_wallet(initialization_wallet_name)
         try:
-            self.config = self.deployer.deploy_vdc(minio_ak=None, minio_sk=None, s3_backup_config=self.backup_config)
+            self.config = self.deployer.deploy_vdc(
+                minio_ak=None, minio_sk=None, s3_backup_config=self.backup_config, install_oauth_proxy=True
+            )
             if not self.config:
                 raise StopChatFlow("Failed to deploy VDC due to invlaid kube config. please try again later")
             self.public_ip = self.vdc.kubernetes[0].public_ip

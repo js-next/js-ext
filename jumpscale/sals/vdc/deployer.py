@@ -14,6 +14,7 @@ from .kubernetes import VDCKubernetesDeployer
 from .proxy import VDCProxy, VDC_PARENT_DOMAIN
 from .s3 import VDCS3Deployer
 from .monitoring import VDCMonitoring
+from .oauth_proxy import VDCOauthProxy
 from .threebot import VDCThreebotDeployer
 from .public_ip import VDCPublicIP
 from .scheduler import GlobalCapacityChecker, GlobalScheduler, Scheduler
@@ -85,6 +86,7 @@ class VDCDeployer:
         self._vdc_k8s_manager = None
         self._threebot = None
         self._monitoring = None
+        self._oauth_proxy = None
         self._public_ip = None
         self._transaction_hashes = []
         self.deployment_logs = deployment_logs
@@ -128,6 +130,12 @@ class VDCDeployer:
         if not self._monitoring:
             self._monitoring = VDCMonitoring(self)
         return self._monitoring
+
+    @property
+    def oauth_proxy(self):
+        if not self._oauth_proxy:
+            self._oauth_proxy = VDCOauthProxy(self)
+        return self._oauth_proxy
 
     @property
     def threebot(self):
@@ -242,7 +250,7 @@ class VDCDeployer:
             reservation_id = pool_info.reservation_id
             return pool.pool_id, reservation_id
         pool_info = self._retry_call(
-            self.zos.pools.create, args=[cus, sus, ipv4us, farm_name, ["TFT"], j.core.identity.me],
+            self.zos.pools.create, args=[cus, sus, ipv4us, farm_name, ["TFT"], j.core.identity.me]
         )
         reservation_id = pool_info.reservation_id
         self.info(
@@ -388,7 +396,7 @@ class VDCDeployer:
         master_size = VDC_SIZE.VDC_FLAVORS[self.flavor]["k8s"]["controller_size"]
         pub_keys = pub_keys or []
         master_ip = self.kubernetes.deploy_master(
-            master_pool_id, gs, master_size, cluster_secret, pub_keys, self.vdc_uuid, nv,
+            master_pool_id, gs, master_size, cluster_secret, pub_keys, self.vdc_uuid, nv
         )
         if not master_ip:
             self.error("failed to deploy kubernetes master")
@@ -493,7 +501,15 @@ class VDCDeployer:
 
         return gcc.result
 
-    def deploy_vdc(self, minio_ak, minio_sk, farm_name=None, install_monitoring_stack=False, s3_backup_config=None):
+    def deploy_vdc(
+        self,
+        minio_ak,
+        minio_sk,
+        farm_name=None,
+        install_monitoring_stack=False,
+        s3_backup_config=None,
+        install_oauth_proxy=False,
+    ):
         """deploys a new vdc
         Args:
             minio_ak: access key for minio
@@ -605,6 +621,14 @@ class VDCDeployer:
                 except j.exceptions.Runtime as e:
                     # TODO: rollback
                     self.error(f"failed to deploy monitoring stack on VDC cluster due to error {str(e)}")
+
+            if install_oauth_proxy:
+                # deploy oauth proxy on kubernetes
+                self.bot_show_update("Deploying oauth proxy")
+                try:
+                    self.oauth_proxy.deploy_chart()
+                except j.exceptions.Runtime as e:
+                    self.error(f"failed to deploy oauth proxy on VDC cluster due to error {str(e)}")
 
             self.bot_show_update("Updating Traefik")
             self.kubernetes.upgrade_traefik()

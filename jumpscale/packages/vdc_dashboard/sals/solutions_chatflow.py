@@ -318,7 +318,7 @@ class SolutionsChatflowDeploy(GedisChatBot):
         cluster_ip = self.vdc_info["public_ip"]
         while not valid:
             custom_domain = self.string_ask(
-                f"Please enter the domain name, make sure the domain points to {cluster_ip}.", required=True,
+                f"Please enter the domain name, make sure the domain points to {cluster_ip}.", required=True
             )
             if not self._does_domain_point_to_ip(custom_domain, cluster_ip):
                 self.md_show(f"The domain {custom_domain} doesn't point to {cluster_ip}.")
