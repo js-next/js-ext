@@ -1,6 +1,7 @@
 ### Clients
 
 - [test_digitalocean](clients/digitalocean/test_digitalocean.md)
+- [test_explorer](clients/explorer/test_explorer.md)
 - [test_github](clients/github/test_github.md)
 - [test_sendgrid](clients/sendgrid/test_sendgrid.md)
 
@@ -12,7 +13,10 @@
 
 - [test_packages](frontend/tests/test_packages.md)
 - [test_pools](frontend/tests/test_pools.md)
+- [test_settings](frontend/tests/test_settings.md)
+- [test_threebot_deployer](frontend/tests/test_threebot_deployer.md)
 - [test_wallets](frontend/tests/test_wallets.md)
+- [test_workloads](frontend/tests/test_workloads.md)
 
 ### Sals
 
