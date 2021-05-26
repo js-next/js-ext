@@ -188,13 +188,14 @@
       },
       validateSession(sessionId) {
         return axios({
-          url: `${baseUrl}/validate`,
+          url: `${baseUrl}/validate?timestamp=${new Date().getTime()}`,
           method: "post",
           headers: {'Content-Type': 'application/json'},
           data: {
-            session_id: sessionId
+            session_id: sessionId,
           }
         }).then((response) => {
+
           this.validSession = response.data.valid
         })
       },
@@ -283,13 +284,21 @@
           url: `${baseUrl}/back`,
           method: "post",
           data: {
-            session_id: this.sessionId
+            session_id: this.sessionId,
           }
         })
       },
       restart () {
-        localStorage.clear()
-        location.reload()
+        axios({
+          url: `${baseUrl}/end`,
+          method: "post",
+          data: {
+            session_id: this.sessionId,
+          }
+        }).then(() => {
+          localStorage.removeItem(this.chatUID);
+          location.reload();
+        })
       },
       getCookie(cname) {
         var name = cname + "=";

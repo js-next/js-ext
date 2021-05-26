@@ -1,4 +1,5 @@
 from jumpscale.servers.gedis.baseactor import BaseActor, actor_method
+from jumpscale.sals.chatflows.session_context import CreateSessionContext, DeleteSessionContext, UpdateSessionContext
 from jumpscale.loader import j
 import base64
 import sys
@@ -26,8 +27,10 @@ class ChatFlows(BaseActor):
         if query_params is None:
             query_params = {}
         obj = chatflow(**query_params)
-        self.sessions[obj.session_id] = obj
-        return {"sessionId": obj.session_id, "title": obj.title}
+        session_id = obj.session_id
+        with CreateSessionContext(session_id):
+            self.sessions[session_id] = obj
+            return {"sessionId": session_id, "title": obj.title}
 
     @actor_method
     def fetch(self, session_id: str, restore: bool = False) -> dict:
@@ -36,15 +39,32 @@ class ChatFlows(BaseActor):
             return {"payload": {"category": "end"}}
 
         result = chatflow.get_work(restore)
-
-        if result.get("category") == "end":
-            self.sessions.pop(session_id)
-
+        j.logger.debug(result)
+        if result["payload"].get("category") == "end":
+            with DeleteSessionContext(session_id):
+                self.sessions.pop(session_id)
+        else:
+            with UpdateSessionContext(f"{session_id}/status", result, False):
+                return result
         return result
 
     @actor_method
     def validate(self, session_id: str) -> dict:
+        path = f"{j.core.dirs.CFGDIR}/chatflows/{session_id}"
+        if j.sals.fs.is_dir(path):
+            # TODO:
+            # load from fs
+            # self.sessions[key] = chatflow.load_from_path(path)
+            # answers.extend([ answer for answer in step_answers.split("\n") if answer])
+            # return {"valid": True}
+            j.logger.debug("dir exists")
         return {"valid": session_id in self.sessions}
+
+    @actor_method
+    def end(self, session_id: str) -> dict:
+        with DeleteSessionContext(session_id):
+            self.sessions.pop(session_id, None)
+            return {"ended": True}
 
     @actor_method
     def report(self, session_id: str, result: str = None):

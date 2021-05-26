@@ -29,7 +29,7 @@ class NetworkDeploy(NetworkBase):
                     break
                 valid = True
 
-    @chatflow_step(title="IP Configuration")
+    @chatflow_step(title="IP Configuration", payment=True)  # TODO: remove the payment, "testing"
     def ip_config(self):
         self.ip_range = j.sals.reservation_chatflow.reservation_chatflow.get_ip_range(self)
         ips = ["IPv6", "IPv4"]
@@ -37,7 +37,7 @@ class NetworkDeploy(NetworkBase):
             "How would you like to connect to your network? If unsure, choose IPv4", ips, required=True, default="IPv4",
         )
 
-    @chatflow_step(title="Reservation")
+    @chatflow_step(title="Reservation", deployment=True)
     @deployment_context()
     def network_reservation(self):
         try:

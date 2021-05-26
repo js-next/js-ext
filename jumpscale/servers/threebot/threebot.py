@@ -6,6 +6,7 @@ import sys
 import toml
 import shutil
 import gevent
+import atexit
 import signal
 from urllib.parse import urlparse
 from gevent.pywsgi import WSGIServer
@@ -837,6 +838,7 @@ class ThreebotServer(Base):
     def start(self, wait: bool = False, cert: bool = True):
         # start default servers in the rack
         # handle signals
+        atexit.register(self.stop)
         for signal_type in (signal.SIGTERM, signal.SIGINT, signal.SIGKILL):
             gevent.signal_handler(signal_type, self.stop)
 
@@ -845,6 +847,11 @@ class ThreebotServer(Base):
             return
 
         self.check_dependencies()
+
+        # check if the stopping server key in redis
+        _db = j.core.db
+        if _db.get("stopping_threebot_server"):
+            _db.unlink("stopping_threebot_server")
 
         self.redis.start()
         self.nginx.start()
@@ -883,13 +890,14 @@ class ThreebotServer(Base):
         self.rack.start(wait=wait)  # to keep the server running
 
     def stop(self):
-        server_packages = self.packages.list_all()
-        for package_name in server_packages:
-            package = self.packages.get(package_name)
-            package.stop()
-        self.nginx.stop()
-        # mark app as stopped, do this before stopping redis
-        j.logger.unregister()
-        self.rack.stop()
-        self.redis.stop()
-        self._started = False
+        if self.is_running():
+            server_packages = self.packages.list_all()
+            for package_name in server_packages:
+                package = self.packages.get(package_name)
+                package.stop()
+            self.nginx.stop()
+            # mark app as stopped, do this before stopping redis
+            j.logger.unregister()
+            self.rack.stop()
+            self.redis.stop()
+            self._started = False
