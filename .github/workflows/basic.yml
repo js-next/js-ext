@@ -3,9 +3,14 @@
 
 name: js-sdk-basic
 
+# on:
+#   schedule:
+#     - cron:  '0 0 * * *'
+#   workflow_dispatch:
+
 on:
-  schedule:
-    - cron:  '0 0 * * *'
+  push:
+    branches: [ development_vdc_test_backup ]
   workflow_dispatch:
 
 jobs:
@@ -14,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
         with:
-          ref: development
+          ref: development_vdc_test_backup
       - uses: nanasess/setup-chromedriver@master
       - name: Gathering dependencies
         run: |
@@ -31,6 +36,9 @@ jobs:
       - name: Install
         run: |
           sudo poetry install
+          sudo wget https://dl.min.io/client/mc/release/linux-amd64/mc
+          sudo chmod +x mc
+          sudo cp mc /bin
       - name: Run tests
         id: tests
         continue-on-error: true
@@ -43,10 +51,14 @@ jobs:
           DESTINATION_WALLET_SECRET: ${{ secrets.DESTINATION_WALLET_SECRET }}
           FAKE_EMAIL: ${{ secrets.FAKE_EMAIL }}
           FAKE_GITHUB_TOKEN: ${{ secrets.FAKE_GITHUB_TOKEN }}
+          S3_URL: ${{ secrets.S3_URL }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          S3_AK: ${{ secrets.S3_AK }}
+          S3_SK: ${{ secrets.S3_SK }}
         run: |
           sudo --preserve-env=TNAME --preserve-env=EMAIL --preserve-env=WORDS --preserve-env=WALLET_SECRET --preserve-env=SOURCE_WALLET_SECRET \
-          --preserve-env=DESTINATION_WALLET_SECRET --preserve-env=FAKE_EMAIL --preserve-env=FAKE_GITHUB_TOKEN \
-          poetry run pytest tests -sv -m "not extend" --cov=jumpscale --cov-report=xml --ignore=tests/clients/digitalocean --ignore=tests/clients/sendgrid
+          --preserve-env=DESTINATION_WALLET_SECRET --preserve-env=FAKE_EMAIL --preserve-env=FAKE_GITHUB_TOKEN --preserve-env=S3_URL --preserve-env=S3_BUCKET --preserve-env=S3_AK --preserve-env=S3_SK \
+          poetry run pytest tests/sals/vdc/test_vdc_backup.py -sv --cov=jumpscale --cov-report=xml --ignore=tests/clients/digitalocean --ignore=tests/clients/sendgrid
       - name: Collect tokens back
         env:
           WALLET_SECRET: ${{ secrets.WALLET_SECRET }}
