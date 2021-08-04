@@ -57,6 +57,7 @@ _NETWORK_KNOWN_TRUSTS = {
 }
 _THREEFOLDFOUNDATION_TFTSTELLAR_ENDPOINT = {
     "FUND": "/threefoldfoundation/transactionfunding_service/fund_transaction",
+    "CONDITIONS": "/threefoldfoundation/transactionfunding_service/conditions",
     "CREATE_UNLOCK": "/threefoldfoundation/unlock_service/create_unlockhash_transaction",
     "GET_UNLOCK": "/threefoldfoundation/unlock_service/get_unlockhash_transaction",
     "CREATE_ACTIVATION_CODE": "/threefoldfoundation/activation_service/create_activation_code",
@@ -112,6 +113,15 @@ class Stellar(Client):
         resp = j.tools.http.post(self._get_url("FUND"), json={"args": data})
         resp.raise_for_status()
         return resp.json()
+
+    def _get_fund_transaction_conditions(self, asset):
+        resp = j.tools.http.post(self._get_url("CONDITIONS"))
+        resp.raise_for_status()
+        conditions = resp.json()
+        for condition in conditions:
+            if condition["asset"] == asset:
+                return condition
+        raise j.exceptions.NotFound(f"Conditions not found for asset: {asset}")
 
     def _create_unlockhash_transaction(self, unlock_hash, transaction_xdr):
         data = {"unlockhash": unlock_hash, "transaction_xdr": transaction_xdr}
@@ -529,8 +539,11 @@ class Stellar(Client):
             )
 
         horizon_server = self._get_horizon_server()
+        if fund_transaction:
+            base_fee = 0
+        else:
+            base_fee = horizon_server.fetch_base_fee()
 
-        base_fee = horizon_server.fetch_base_fee()
         if from_address:
             source_account = horizon_server.load_account(from_address)
         else:
@@ -551,6 +564,17 @@ class Stellar(Client):
             asset_issuer=issuer,
             source=source_account.account_id,
         )
+        fund_operation_data = {}
+        if fund_transaction:
+            fund_operation_data = self._get_fund_transaction_conditions(asset)
+            if asset == fund_operation_data.get("asset"):
+                transaction_builder.append_payment_op(
+                    destination=fund_operation_data["fee_account_id"],
+                    amount=fund_operation_data["fee_fixed"],
+                    asset_code=asset_code,
+                    asset_issuer=issuer,
+                )
+
         transaction_builder.set_timeout(timeout)
         if memo_text is not None:
             transaction_builder.add_text_memo(memo_text)
@@ -560,11 +584,6 @@ class Stellar(Client):
         transaction = transaction_builder.build()
         transaction = transaction.to_xdr()
 
-        if asset_code in _NETWORK_KNOWN_TRUSTS[self.network.value]:
-            if fund_transaction:
-                transaction = self._fund_transaction(transaction=transaction)
-                transaction = transaction["transaction_xdr"]
-
         if not sign:
             return transaction
 
@@ -573,8 +592,17 @@ class Stellar(Client):
         my_keypair = stellar_sdk.Keypair.from_secret(self.secret)
         transaction.sign(my_keypair)
 
-        response = horizon_server.submit_transaction(transaction)
-        tx_hash = response["hash"]
+        tx_hash = ""
+        if fund_transaction:
+            if asset == fund_operation_data.get("asset"):
+                transaction = self._fund_transaction(transaction=transaction.to_xdr())
+                tx_hash = transaction["transactionhash"]
+            else:
+                raise j.exceptions.NotFound(f"Conditions not found for asset: {asset}")
+        else:
+            response = horizon_server.submit_transaction(transaction)
+            tx_hash = response["hash"]
+
         j.logger.info(f"Transaction hash: {tx_hash}")
         return tx_hash
 
