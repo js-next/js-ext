@@ -32,12 +32,7 @@ class BaseTest(BaseTests):
             cls.me = j.core.identity.me
 
         # Accept T&C for testing identity.
-        cls.user_entry_name = f"{cls.tname.replace('.3bot', '')}"
-        cls.user_factory = StoredFactory(UserEntry)
-        user_entry = cls.user_factory.get(cls.user_entry_name)
-        user_entry.has_agreed = True
-        user_entry.tname = cls.tname
-        user_entry.save()
+        cls.accept_t_c(tname=cls.tname)
 
         # Configure test identity and start threebot server.
         cls.identity_name = j.data.random_names.random_name()
@@ -85,3 +80,12 @@ class BaseTest(BaseTests):
         if self._outcome.errors:
             self.driver.save_screenshot(f"{self._testMethodName}.png")
         self.driver.quit()
+
+    @classmethod
+    def accept_t_c(self, tname):
+        self.user_entry_name = f"{tname.replace('.3bot', '')}"
+        self.user_factory = StoredFactory(UserEntry)
+        user_entry = self.user_factory.get(self.user_entry_name)
+        user_entry.has_agreed = True
+        user_entry.tname = tname
+        user_entry.save()

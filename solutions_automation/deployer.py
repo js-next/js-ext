@@ -5,6 +5,7 @@ from solutions_automation.dashboard_solutions.kubernetes import KubernetesAutoma
 from solutions_automation.dashboard_solutions.minio import MinioAutomated
 from solutions_automation.dashboard_solutions.monitoring import MonitoringAutomated
 from solutions_automation.dashboard_solutions.network import NetworkDeployAutomated
+from solutions_automation.dashboard_solutions.network_access import NetworkAccessAutomated
 from solutions_automation.dashboard_solutions.pools import PoolAutomated
 from solutions_automation.dashboard_solutions.extend_pools import PoolExtendAutomated
 from solutions_automation.dashboard_solutions.four_to6gw import FourToSixGatewayAutomated
@@ -239,6 +240,10 @@ def deploy_generic_flist(
     entry_point="",
     env_vars={"name": "TEST"},
     log="NO",
+    redis_chaneel_type="redis",
+    redis_ip="",
+    redis_port="",
+    redis_channel_name="",
     ipv6="NO",
     node_automatic="YES",
     node="choose_random",
@@ -258,6 +263,10 @@ def deploy_generic_flist(
         entry_point=entry_point,
         env_vars=env_vars,
         log=log,
+        redis_chaneel_type=redis_chaneel_type,
+        redis_ip=redis_ip,
+        redis_port=redis_port,
+        redis_channel_name=redis_channel_name,
         ipv6=ipv6,
         node_automatic=node_automatic,
         node=node,
@@ -335,8 +344,12 @@ def create_network(
     )
 
 
-def add_access_to_network(network_name, ip_version="IPv4", debug=True):
-    return NetworkDeployAutomated(network_name=network_name, type="Add Access", ip_version=ip_version, debug=True)
+def add_access_to_network(
+    network_name, ip_version="IPv4", access_node="choose_random", pool="choose_random", debug=True
+):
+    return NetworkAccessAutomated(
+        network_name=network_name, ip_version=ip_version, access_node=access_node, pool=pool, debug=True
+    )
 
 
 def deploy_exposed(

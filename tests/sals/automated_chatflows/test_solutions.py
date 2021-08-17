@@ -3,6 +3,7 @@ from jumpscale.loader import j
 from redis import Redis
 from solutions_automation import deployer
 from tests.sals.automated_chatflows.chatflows_base import ChatflowsBase
+from parameterized import parameterized
 from gevent import sleep
 from unittest import TestCase
 
@@ -90,7 +91,10 @@ class TFGridSolutionChatflows(ChatflowsBase):
             sleep(1)
         return False
 
-    def test01_ubuntu(self):
+    @parameterized.expand(
+        [("ubuntu_version", "18.04"), ("ubuntu_version", "20.04"),]
+    )
+    def test01_ubuntu(self, _, ubuntu_version):
         """Test case for deploying Ubuntu.
 
         **Test Scenario**
@@ -102,7 +106,11 @@ class TFGridSolutionChatflows(ChatflowsBase):
         self.info("Deploy Ubuntu.")
         name = self.random_name()
         ubuntu = deployer.deploy_ubuntu(
-            solution_name=name, pool=self.pool_id, network=self.network_name, ssh=self.ssh_cl.public_key_path,
+            solution_name=name,
+            pool=self.pool_id,
+            network=self.network_name,
+            ssh=self.ssh_cl.public_key_path,
+            version=f"ubuntu-{ubuntu_version}",
         )
         self.solution_uuid = ubuntu.solution_id
 
@@ -119,7 +127,7 @@ class TFGridSolutionChatflows(ChatflowsBase):
         localclient.save()
         self.solution_uuid = ubuntu.solution_id
         _, res, _ = localclient.sshclient.run("cat /etc/os-release")
-        self.assertIn('VERSION_ID="18.04"', res)
+        self.assertIn(f'VERSION_ID="{ubuntu_version}"', res)
 
     def test02_kubernetes(self):
         """Test case for Deploying a kubernetes.

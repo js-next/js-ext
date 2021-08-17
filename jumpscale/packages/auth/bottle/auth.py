@@ -191,7 +191,7 @@ def auto_login():
     """
     if j.core.config.get("AUTO_LOGIN"):
         session = request.environ.get("beaker.session", {})
-        session["username"] = j.core.identity.me.tname
+        session["username"] = request.query.get("username", j.core.identity.me.tname)
         session["email"] = j.core.identity.me.email
         session["authorized"] = True
 
