@@ -191,7 +191,7 @@ class Manager:
 
         rc, out, err = self._execute(f"helm --kubeconfig {self.config_path} --namespace {namespace} delete {release}")
         if rc != 0:
-            raise j.exceptions.Runtime(f"Failed to deploy chart {release} , error was {err}")
+            raise j.exceptions.Runtime(f"Failed to delete chart {release} , error was {err}")
 
         # Getting k8s master IP
         if vdc_instance:
@@ -231,6 +231,25 @@ class Manager:
             rc, out, err = self._execute(f"helm --kubeconfig {self.config_path} list -A -o json")
         if rc != 0:
             raise j.exceptions.Runtime(f"Failed to list charts, error was {err}")
+        return j.data.serializers.json.loads(out)
+
+    def list_stuck_releases(self, namespace=""):
+        """list helm releases that pending, uninstalling or failed
+        Args:
+            namespace: default empty will list all releases in all namespaces
+        Returns:
+            list: output of the helm command as dicts
+        """
+        if namespace:
+            rc, out, err = self._execute(
+                f"helm --kubeconfig {self.config_path} --namespace {namespace} list --uninstalling --pending --failed -o json"
+            )
+        else:
+            rc, out, err = self._execute(
+                f"helm --kubeconfig {self.config_path} list -A --uninstalling --pending --failed -o json"
+            )
+        if rc != 0:
+            raise j.exceptions.Runtime(f"Failed to list stuck charts, error was {err}")
         return j.data.serializers.json.loads(out)
 
     @helm_required
