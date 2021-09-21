@@ -14,7 +14,7 @@
 
     <v-data-table
       :headers="headers"
-      :items="vmachines"
+      :items="getVms()"
       :loading="loading || tableloading"
       class="elevation-1"
     >
@@ -81,7 +81,7 @@
       title="Delete VM"
       :messages="deletionMessages"
       :wid="selectedvm"
-      @reload-vdcinfo="getVMSinfo"
+      @reload-vdcinfo="removeVm()"
     ></cancel-workload>
   </div>
 </template>
@@ -125,6 +125,7 @@ module.exports = {
           "Are you sure you want to delete this virtual machine?",
         successMsg: "Virtual machine deleted successfully",
       },
+      deletedVms: []
     };
   },
   methods: {
@@ -142,7 +143,13 @@ module.exports = {
         params: { topic: topic },
       });
     },
-  },
+    removeVm() {
+      this.deletedVms.push(this.selectedvm);
+    },
+    getVms() {
+      return this.vmachines.filter(({wid}) => !(this.deletedVms.includes(wid)))
+    }
+  }
 };
 </script>
 
